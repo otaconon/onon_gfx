@@ -1,0 +1,11 @@
+[package]
+name = "onon_render"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wgpu = "27.0.1"
+winit = "0.30.12"

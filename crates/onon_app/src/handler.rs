@@ -1,4 +1,4 @@
-use crate::wgpu_app::WgpuApp;
+use crate::app::WgpuApp;
 use parking_lot::Mutex;
 use std::sync::Arc;
 use winit::{
@@ -92,14 +92,7 @@ impl ApplicationHandler for WgpuAppHandler {
         app.mouse_wheel(delta, phase);
       }
       WindowEvent::RedrawRequested => {
-        app.window.pre_present_notify();
-
-        match app.render() {
-          Ok(_) => {}
-          Err(wgpu::SurfaceError::Lost) => eprintln!("Surface is lost"),
-          Err(e) => eprintln!("{e:?}"),
-        }
-        app.window.request_redraw();
+        app.redraw(); 
       }
       _ => (),
     }

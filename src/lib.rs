@@ -1,7 +1,5 @@
 pub mod utils;
-mod wgpu_actions;
-mod wgpu_app_handler;
-mod wgpu_app;
+use onon_internals::app;
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::wasm_bindgen;
@@ -17,7 +15,7 @@ pub fn run() -> anyhow::Result<()> {
   }
 
   let event_loop = winit::event_loop::EventLoop::with_user_event().build()?;
-  let mut app = wgpu_app_handler::WgpuAppHandler::default();
+  let mut app = app::handler::WgpuAppHandler::default();
   event_loop.run_app(&mut app)?;
 
   Ok(())

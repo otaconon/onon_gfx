@@ -1,0 +1,11 @@
+[package]
+name = "onon_internals"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+onon_app = {path = "../onon_app"}
+onon_render = {path = "../onon_render"}
