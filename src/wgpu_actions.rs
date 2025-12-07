@@ -6,6 +6,7 @@ use winit::{
   event::*
 };
 
+#[allow(unused)]
 pub trait WgpuAppAction {
   fn new(window: Arc<Window>) -> impl core::future::Future<Output = Self> + WasmNotSend;
   fn set_window_resized(&mut self, new_size: PhysicalSize<u32>);

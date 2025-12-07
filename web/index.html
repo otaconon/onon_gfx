@@ -1,35 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Otacon gfx</title>
-  </head>
 
-  <body id="wgpu-app-container">
-    <script type="module">
-      import init from "../pkg/onon_gfx.js";
-      init().then(() => {
-        console.log("WASM Loaded");
-      });
-    </script>
-    <style>
-    html, body {
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Otacon gfx</title>
+</head>
+
+<body id="wgpu-app-container">
+  <script type="module">
+    import init from "../pkg/onon_gfx.js";
+
+    init().then(() => {
+      console.log("WASM Loaded");
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'F12' || e.code === 'F5' || (e.ctrlKey && e.code === 'KeyR')) {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+
+        console.log(`Allowed browser override for: ${e.code}`);
+      }
+    }, { capture: true });
+  </script>
+
+  <style>
+    html,
+    body {
       margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
       overflow: hidden;
     }
+
     canvas {
       display: block;
       width: 100% !important;
       height: 100% !important;
     }
+
     #wgpu-app-container {
-      background-color: black; 
+      background-color: black;
     }
-</style>
-  </body>
+  </style>
+</body>
+
 </html>
