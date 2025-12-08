@@ -1,18 +1,21 @@
 use std::sync::Arc;
-use wgpu::{include_wgsl};
+use wgpu::{CommandEncoder, include_wgsl};
 use winit::{dpi::PhysicalSize, window::Window};
-use crate:: {render_pipeline, queries};
+use crate::{queries, render_object::RenderObject, render_resource::{FrameContext, render_pipeline}};
+
+struct RenderContext<'a> {
+  encoder: CommandEncoder,
+  render_pass: Option<wgpu::RenderPass<'a>>
+}
 
 pub struct Renderer {
-  #[allow(unused)]
   window: Arc<Window>,
   surface: wgpu::Surface<'static>,
   device: wgpu::Device,
   queue: wgpu::Queue,
   config: wgpu::SurfaceConfiguration,
   resize_requested: bool,
-  render_pipeline: wgpu::RenderPipeline,
-  pub size: PhysicalSize<u32> //Remove from here
+  pub size: PhysicalSize<u32>, //Remove from here
 }
 
 impl Renderer {
@@ -35,49 +38,38 @@ impl Renderer {
     let layout = render_pipeline::create_layout(&device);
     let render_pipeline = render_pipeline::create_pipeline(&device, &layout, &shader, &config);
 
-    Self {window, surface, device, queue, config, resize_requested: false, render_pipeline, size}
+    Self {window, surface, device, queue, config, resize_requested: false, size}
   }
 
-  pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
+  pub fn begin_rendering(&mut self) -> Result<Option<FrameContext>, wgpu::SurfaceError> {
     if self.size.width == 0 || self.size.height == 0 {
-      return Ok(());
+      return Ok(None);
     } else if self.resize_requested {
       self.resize();
     } 
 
     let output = self.surface.get_current_texture()?;
-    let view = output
-      .texture
-      .create_view(&wgpu::TextureViewDescriptor::default());
-    let mut encoder = self
-      .device
+
+
+    let encoder = self
+      .device 
       .create_command_encoder(&wgpu::CommandEncoderDescriptor {
         label: Some("Render Encoder"),
       });
-    {
-      let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-        label: Some("Render Pass"),
-        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-          view: &view,
-          resolve_target: None,
-          depth_slice: None,
-          ops: wgpu::Operations {
-            load: wgpu::LoadOp::Clear(wgpu::Color {
-              r: 0.0, g: 0.0, b: 0.0, a: 1.0
-            }),
-            store: wgpu::StoreOp::Store,
-          },
-        })],
-        ..Default::default()
-      });
-      render_pass.set_pipeline(&self.render_pipeline);
+    
+    Ok(Some(FrameContext::new(encoder, output, self.queue.clone())))
+  }
+
+  pub fn render_objects(&self, render_pass: &mut wgpu::RenderPass, objects: &Vec<RenderObject>) {
+    for object in objects {
+      render_pass.set_pipeline(&object.shader_pass.render_pipeline);
       render_pass.draw(0..3, 0..1);
     }
+  }
 
-    self.queue.submit(Some(encoder.finish()));
-    output.present();
-
-    Ok(())
+  pub fn finish_rendering(&self, frame_ctx: FrameContext) {
+    self.queue.submit(Some(frame_ctx.encoder.finish()));
+    frame_ctx.output.present();
   }
 
   pub fn request_resize(&mut self) {

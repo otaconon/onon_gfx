@@ -1,57 +1,45 @@
-use onon_render::Renderer;
+use onon_render::{RenderObject, Renderer};
 use std::sync::Arc;
 use winit::window::Window;
 
 pub struct WgpuApp {
   pub window: Arc<Window>,
   renderer: Renderer,
+  objects: Vec<RenderObject>
 }
 
 impl WgpuApp {
   pub async fn new(window: Arc<Window>) -> Self {
     #[cfg(target_arch = "wasm32")]
     {
-      use winit::platform::web::WindowExtWebSys;
-
-      let canvas = window.canvas().unwrap();
-
-      web_sys::window()
-        .and_then(|win| win.document())
-        .map(|doc| {
-          let _ = canvas.set_attribute("id", "winit-canvas");
-          match doc.get_element_by_id("wgpu-app-container") {
-            Some(dst) => {
-              let _ = dst.append_child(canvas.as_ref());
-            }
-            None => {
-              let container = doc.create_element("div").unwrap();
-              let _ = container.set_attribute("id", "wgpu-app-container");
-              let _ = container.append_child(canvas.as_ref());
-
-              doc.body().map(|body| body.append_child(container.as_ref()));
-            }
-          };
-        })
-        .expect("Failed to create canvas");
-
-      canvas.set_tab_index(0);
-
-      let style = canvas.style();
-      style.set_property("outline", "none").unwrap();
-      canvas.focus().expect("Can't focus on canvas");
+      use crate::canvas::create_canvas;
+      create_canvas(window.clone()); 
     }
+
+    let render_objects = Vec::new();
 
     Self {
       window: window.clone(),
       renderer: Renderer::new(window).await,
+      objects: render_objects
     }
   }
 
   pub fn redraw(&mut self) {
     self.window.pre_present_notify();
 
-    match self.renderer.render() {
-      Ok(_) => {}
+    match self.renderer.begin_rendering() {
+      Ok(Some(mut frame_ctx)) => {
+        let view = frame_ctx.output
+          .texture
+          .create_view(&wgpu::TextureViewDescriptor::default());
+        {
+          let mut render_pass = frame_ctx.create_render_pass(&view);
+          self.renderer.render_objects(&mut render_pass, &self.objects); 
+        }
+        self.renderer.finish_rendering(frame_ctx);
+      }
+      Ok(None) => {}
       Err(wgpu::SurfaceError::Lost) => eprintln!("Surface is lost"),
       Err(e) => eprintln!("{e:?}"),
     }
