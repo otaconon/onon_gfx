@@ -1,10 +1,11 @@
-use onon_render::{RenderObject, Renderer};
+use onon_render::{RenderObject, Renderer, render_resource::render_pipeline, shader_pass};
+use wgpu::include_wgsl;
 use std::sync::Arc;
 use winit::window::Window;
 
 pub struct WgpuApp {
   pub window: Arc<Window>,
-  renderer: Renderer,
+  renderer: Renderer<'static>,
   objects: Vec<RenderObject>
 }
 
@@ -16,11 +17,15 @@ impl WgpuApp {
       create_canvas(window.clone()); 
     }
 
+    let renderer = Renderer::new(window.clone()).await;
+    let shader = renderer.state.device.create_shader_module(include_wgsl!("../../../shaders/triangle.wgsl"));
+    let layout = render_pipeline::create_layout(&renderer.state.device);
+
     let render_objects = Vec::new();
 
     Self {
       window: window.clone(),
-      renderer: Renderer::new(window).await,
+      renderer: renderer,
       objects: render_objects
     }
   }
@@ -76,10 +81,9 @@ impl WgpuApp {
   }
 
   pub fn set_window_resized(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
-    if new_size == self.renderer.size {
+    if new_size == self.renderer.state.get_size() {
       return;
     }
-    self.renderer.size = new_size;
-    self.renderer.request_resize();
+    self.renderer.request_resize(new_size);
   }
 }
