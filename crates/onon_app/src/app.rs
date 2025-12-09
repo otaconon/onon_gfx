@@ -1,5 +1,4 @@
-use onon_render::{RenderObject, Renderer, render_resource::render_pipeline, shader_pass};
-use wgpu::include_wgsl;
+use onon_render::{RenderObject, Renderer};
 use std::sync::Arc;
 use winit::window::Window;
 
@@ -18,9 +17,6 @@ impl WgpuApp {
     }
 
     let renderer = Renderer::new(window.clone()).await;
-    let shader = renderer.state.device.create_shader_module(include_wgsl!("../../../shaders/triangle.wgsl"));
-    let layout = render_pipeline::create_layout(&renderer.state.device);
-
     let render_objects = Vec::new();
 
     Self {
@@ -40,7 +36,11 @@ impl WgpuApp {
           .create_view(&wgpu::TextureViewDescriptor::default());
         {
           let mut render_pass = frame_ctx.create_render_pass(&view);
-          self.renderer.render_solids(&mut render_pass, &self.objects); 
+          let res = self.renderer.render_solids(&mut render_pass, &self.objects); 
+          match res {
+            Ok(()) => {},
+            Err(e) => log::error!("{}", e)
+          }
         }
         self.renderer.finish_rendering(frame_ctx);
       }

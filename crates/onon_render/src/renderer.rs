@@ -1,5 +1,5 @@
 use crate::{
-  PipelineManager, pipeline_manager, queries,
+  PipelineManager,
   render_object::RenderObject,
   render_resource::{
     FrameContext, RenderState,
@@ -7,11 +7,10 @@ use crate::{
   },
 };
 use std::sync::Arc;
-use wgpu::{CommandEncoder, include_wgsl};
+use wgpu::{include_wgsl};
 use winit::{dpi::PhysicalSize, window::Window};
 
 pub struct Renderer<'a> {
-  window: Arc<Window>,
   pub state: RenderState<'a>,
   pipeline_manager: PipelineManager,
 }
@@ -19,18 +18,18 @@ pub struct Renderer<'a> {
 impl<'a> Renderer<'a> {
   pub async fn new(window: Arc<Window>) -> Self {
     let state = RenderState::new(window.clone()).await;
+    let mut pipeline_manager = PipelineManager::new();
 
     let shader = state
       .device
       .create_shader_module(include_wgsl!("../../../shaders/triangle.wgsl"));
     let layout = render_pipeline::create_layout(&state.device);
-    let render_pipeline =
-      render_pipeline::create_pipeline(&state.device, &layout, &shader, &state.config);
+    let solid_pipeline = render_pipeline::create_pipeline(&state.device, &layout, &shader, &state.config);
+    pipeline_manager.add_pipeline(PipelineType::Solid, solid_pipeline);
 
     Self {
-      window,
       state,
-      pipeline_manager: PipelineManager::new(),
+      pipeline_manager
     }
   }
 
@@ -66,6 +65,8 @@ impl<'a> Renderer<'a> {
     for object in objects {
       render_pass.draw(0..3, 0..1);
     }
+
+    render_pass.draw(0..3, 0..1);
 
     Ok(())
   }
