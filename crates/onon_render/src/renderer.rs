@@ -22,10 +22,17 @@ impl<'a> Renderer<'a> {
 
     let shader = state
       .device
+      .create_shader_module(include_wgsl!("../../../shaders/solid.wgsl"));
+    let layout = render_pipeline::create_layout(&state.device);
+    let pipeline = render_pipeline::create_pipeline(&state.device, &layout, &shader, &state.config);
+    pipeline_manager.add_pipeline(PipelineType::Solid, pipeline);
+
+    let shader = state
+      .device
       .create_shader_module(include_wgsl!("../../../shaders/triangle.wgsl"));
     let layout = render_pipeline::create_layout(&state.device);
-    let solid_pipeline = render_pipeline::create_pipeline(&state.device, &layout, &shader, &state.config);
-    pipeline_manager.add_pipeline(PipelineType::Solid, solid_pipeline);
+    let pipeline = render_pipeline::create_pipeline(&state.device, &layout, &shader, &state.config);
+    pipeline_manager.add_pipeline(PipelineType::Triangle, pipeline);
 
     Self {
       state,
@@ -51,6 +58,18 @@ impl<'a> Renderer<'a> {
     )))
   }
 
+  pub fn render(&self, render_pass: &mut wgpu::RenderPass, pipeline_type: PipelineType) -> Result<(), &'static str> {
+    let pipeline = self
+      .pipeline_manager
+      .get_pipeline(pipeline_type)
+      .ok_or("No triangle pipeline is setup")?;
+
+    render_pass.set_pipeline(pipeline);
+    render_pass.draw(0..3, 0..1);
+
+    Ok(())
+  }
+
   pub fn render_solids(
     &self,
     render_pass: &mut wgpu::RenderPass,
@@ -66,6 +85,21 @@ impl<'a> Renderer<'a> {
       render_pass.draw(0..3, 0..1);
     }
 
+    render_pass.draw(0..3, 0..1);
+
+    Ok(())
+  }
+
+  pub fn render_triangle(
+    &self,
+    render_pass: &mut wgpu::RenderPass,
+  ) -> Result<(), &'static str> {
+    let pipeline = self
+      .pipeline_manager
+      .get_pipeline(PipelineType::Triangle)
+      .ok_or("No triangle pipeline is setup")?;
+
+    render_pass.set_pipeline(pipeline);
     render_pass.draw(0..3, 0..1);
 
     Ok(())

@@ -1,11 +1,15 @@
-use onon_render::{RenderObject, Renderer};
+use onon_render::{RenderObject, Renderer, render_resource::render_pipeline::PipelineType};
 use std::sync::Arc;
-use winit::window::Window;
+use winit::{
+  event::ElementState, keyboard::{Key, NamedKey}, window::Window
+};
 
 pub struct WgpuApp {
   pub window: Arc<Window>,
   renderer: Renderer<'static>,
-  objects: Vec<RenderObject>
+  objects: Vec<RenderObject>,
+  pipelines: Vec<PipelineType>,
+  current_pipeline: usize,
 }
 
 impl WgpuApp {
@@ -13,7 +17,7 @@ impl WgpuApp {
     #[cfg(target_arch = "wasm32")]
     {
       use crate::canvas::create_canvas;
-      create_canvas(window.clone()); 
+      create_canvas(window.clone());
     }
 
     let renderer = Renderer::new(window.clone()).await;
@@ -22,7 +26,9 @@ impl WgpuApp {
     Self {
       window: window.clone(),
       renderer: renderer,
-      objects: render_objects
+      objects: render_objects,
+      pipelines: vec![PipelineType::Solid, PipelineType::Triangle],
+      current_pipeline: 0,
     }
   }
 
@@ -31,15 +37,19 @@ impl WgpuApp {
 
     match self.renderer.begin_rendering() {
       Ok(Some(mut frame_ctx)) => {
-        let view = frame_ctx.output
+        let view = frame_ctx
+          .output
           .texture
           .create_view(&wgpu::TextureViewDescriptor::default());
         {
           let mut render_pass = frame_ctx.create_render_pass(&view);
-          let res = self.renderer.render_solids(&mut render_pass, &self.objects); 
+          let res = self.renderer.render(
+            &mut render_pass,
+            self.pipelines[self.current_pipeline].clone(),
+          );
           match res {
-            Ok(()) => {},
-            Err(e) => log::error!("{}", e)
+            Ok(()) => {}
+            Err(e) => log::error!("{}", e),
           }
         }
         self.renderer.finish_rendering(frame_ctx);
@@ -51,8 +61,16 @@ impl WgpuApp {
     self.window.request_redraw();
   }
 
-  pub fn keyboard_input(&mut self, _event: &winit::event::KeyEvent) -> bool {
-    false
+  pub fn keyboard_input(&mut self, event: &winit::event::KeyEvent) -> bool {
+    if event.state == ElementState::Pressed && !event.repeat {
+      match event.logical_key {
+        Key::Named(NamedKey::Space) => {
+          self.current_pipeline = (self.current_pipeline + 1) % self.pipelines.len();
+        }
+        _ => {}
+      }
+    }
+    true
   }
 
   pub fn mouse_click(

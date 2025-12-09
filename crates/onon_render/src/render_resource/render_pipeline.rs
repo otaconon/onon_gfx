@@ -2,10 +2,11 @@ use wgpu::{
   Device, PipelineLayout, RenderPipeline, ShaderModule, SurfaceConfiguration
 };
 
-#[derive(Hash, Eq, PartialEq)]
+#[derive(Hash, Eq, PartialEq, Clone)]
 pub enum PipelineType {
   Solid,
-  Wireframe
+  Wireframe,
+  Triangle
 }
 
 pub fn create_layout(device: &Device) -> PipelineLayout {
