@@ -40,7 +40,7 @@ impl WgpuApp {
           .create_view(&wgpu::TextureViewDescriptor::default());
         {
           let mut render_pass = frame_ctx.create_render_pass(&view);
-          self.renderer.render_objects(&mut render_pass, &self.objects); 
+          self.renderer.render_solids(&mut render_pass, &self.objects); 
         }
         self.renderer.finish_rendering(frame_ctx);
       }

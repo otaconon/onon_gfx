@@ -2,6 +2,12 @@ use wgpu::{
   Device, PipelineLayout, RenderPipeline, ShaderModule, SurfaceConfiguration
 };
 
+#[derive(Hash, Eq, PartialEq)]
+pub enum PipelineType {
+  Solid,
+  Wireframe
+}
+
 pub fn create_layout(device: &Device) -> PipelineLayout {
   device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
     label: Some("Render Pipeline Layout"),

@@ -1,43 +1,84 @@
+use crate::{
+  PipelineManager, pipeline_manager, queries,
+  render_object::RenderObject,
+  render_resource::{
+    FrameContext, RenderState,
+    render_pipeline::{self, PipelineType},
+  },
+};
 use std::sync::Arc;
 use wgpu::{CommandEncoder, include_wgsl};
 use winit::{dpi::PhysicalSize, window::Window};
-use crate::{queries, render_object::RenderObject, render_resource::{FrameContext, RenderState, render_pipeline}};
 
 pub struct Renderer<'a> {
   window: Arc<Window>,
   pub state: RenderState<'a>,
-  resize_requested: bool,
+  pipeline_manager: PipelineManager,
 }
 
 impl<'a> Renderer<'a> {
   pub async fn new(window: Arc<Window>) -> Self {
     let state = RenderState::new(window.clone()).await;
 
-    let shader = state.device.create_shader_module(include_wgsl!("../../../shaders/triangle.wgsl"));
+    let shader = state
+      .device
+      .create_shader_module(include_wgsl!("../../../shaders/triangle.wgsl"));
     let layout = render_pipeline::create_layout(&state.device);
-    let render_pipeline = render_pipeline::create_pipeline(&state.device, &layout, &shader, &state.config);
+    let render_pipeline =
+      render_pipeline::create_pipeline(&state.device, &layout, &shader, &state.config);
 
-    Self {window, state, resize_requested: false}
+    Self {
+      window,
+      state,
+      pipeline_manager: PipelineManager::new(),
+    }
   }
 
   pub fn begin_rendering(&mut self) -> Result<Option<FrameContext>, wgpu::SurfaceError> {
-    self.state.resize(); 
+    self.state.resize();
 
     let output = self.state.surface.get_current_texture()?;
     let encoder = self
-      .state.device
+      .state
+      .device
       .create_command_encoder(&wgpu::CommandEncoderDescriptor {
         label: Some("Render Encoder"),
       });
-    
-    Ok(Some(FrameContext::new(encoder, output, self.state.queue.clone())))
+
+    Ok(Some(FrameContext::new(
+      encoder,
+      output,
+      self.state.queue.clone(),
+    )))
   }
 
-  pub fn render_objects(&self, render_pass: &mut wgpu::RenderPass, objects: &Vec<RenderObject>) {
+  pub fn render_solids(
+    &self,
+    render_pass: &mut wgpu::RenderPass,
+    objects: &Vec<RenderObject>,
+  ) -> Result<(), &'static str> {
+    let pipeline = self
+      .pipeline_manager
+      .get_pipeline(PipelineType::Solid)
+      .ok_or("No solid pipeline is setup")?;
+    render_pass.set_pipeline(pipeline);
+
     for object in objects {
-      render_pass.set_pipeline(&object.shader_pass.render_pipeline);
       render_pass.draw(0..3, 0..1);
     }
+
+    Ok(())
+  }
+
+  #[allow(unused)]
+  pub fn render_wireframes(&self, render_pass: &mut wgpu::RenderPass) -> Result<(), &'static str> {
+    let pipeline = self
+      .pipeline_manager
+      .get_pipeline(PipelineType::Wireframe)
+      .ok_or("No wireframe pipeline is setup")?;
+    render_pass.set_pipeline(pipeline);
+
+    Ok(())
   }
 
   pub fn finish_rendering(&self, frame_ctx: FrameContext) {
@@ -48,6 +89,4 @@ impl<'a> Renderer<'a> {
   pub fn request_resize(&mut self, new_size: PhysicalSize<u32>) {
     self.state.new_size = Some(new_size);
   }
-
-
 }
