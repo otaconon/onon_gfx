@@ -24,6 +24,7 @@ getrandom = { version = "0.3.4", features = ["wasm_js"] }
 imp = "0.1.0"
 web-time = "1.1.0"
 glam = "0.30.9"
+wgpu-types = "27.0.1"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 pollster = "0.4.0"

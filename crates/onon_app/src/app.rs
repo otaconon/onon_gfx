@@ -81,7 +81,7 @@ impl WgpuApp {
   }
 
   pub fn set_window_resized(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
-    if new_size == self.renderer.state.get_size() {
+    if new_size == self.renderer.render_state.get_size() {
       return;
     }
     self.renderer.request_resize(new_size);
