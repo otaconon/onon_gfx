@@ -1,16 +1,14 @@
-use std::sync::Arc;
-
 use crate::{
-  mesh::Mesh2D, shader_pass::ShaderPass
+  mesh::Mesh2D
 };
 
 pub struct RenderObject {
   pub mesh: Mesh2D,
-  pub shader_pass: Arc<ShaderPass>
+  pub pipeline_id: u32
 }
 
 impl RenderObject {
-  pub fn new(mesh: Mesh2D, shader_pass: Arc<ShaderPass>) -> Self {
-    Self{mesh, shader_pass}
+  pub fn new(mesh: Mesh2D, pipeline_id: u32) -> Self {
+    Self{mesh, pipeline_id}
   }
 }

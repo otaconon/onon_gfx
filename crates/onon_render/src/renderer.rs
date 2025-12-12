@@ -1,9 +1,6 @@
 use crate::{
   render_object::RenderObject,
-  render_resource::{
-    FrameContext, RenderState,
-    render_pipeline,
-  },
+  render_resource::{FrameContext, RenderState, render_pipeline},
 };
 use std::sync::Arc;
 use winit::{dpi::PhysicalSize, window::Window};
@@ -23,7 +20,7 @@ impl<'a> Renderer<'a> {
 
     Self {
       render_state,
-      pipeline_manager
+      pipeline_manager,
     }
   }
 
@@ -31,12 +28,13 @@ impl<'a> Renderer<'a> {
     self.render_state.resize();
 
     let output = self.render_state.surface.get_current_texture()?;
-    let encoder = self
-      .render_state
-      .device
-      .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-        label: Some("Render Encoder"),
-      });
+    let encoder =
+      self
+        .render_state
+        .device
+        .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+          label: Some("Render Encoder"),
+        });
 
     Ok(Some(FrameContext::new(
       encoder,
@@ -54,13 +52,17 @@ impl<'a> Renderer<'a> {
       .pipeline_manager
       .get_pipeline(render_pipeline::PipelineType::Solid)
       .ok_or("No solid pipeline is setup")?;
+
     render_pass.set_pipeline(pipeline);
 
     for object in objects {
-      render_pass.draw(0..3, 0..1);
+      render_pass.set_vertex_buffer(0, object.mesh.vertex_buffer.slice(..));
+      render_pass.set_index_buffer(
+        object.mesh.index_buffer.slice(..),
+        wgpu::IndexFormat::Uint16,
+      );
+      render_pass.draw_indexed(0..object.mesh.indices.len() as u32, 0, 0..1);
     }
-
-    render_pass.draw(0..3, 0..1);
 
     Ok(())
   }
@@ -77,7 +79,10 @@ impl<'a> Renderer<'a> {
   }
 
   pub fn finish_rendering(&self, frame_ctx: FrameContext) {
-    self.render_state.queue.submit(Some(frame_ctx.encoder.finish()));
+    self
+      .render_state
+      .queue
+      .submit(Some(frame_ctx.encoder.finish()));
     frame_ctx.output.present();
   }
 

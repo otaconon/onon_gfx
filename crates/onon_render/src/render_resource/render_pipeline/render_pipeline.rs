@@ -1,3 +1,4 @@
+use crate::mesh;
 
 #[derive(Hash, Eq, PartialEq)]
 pub enum PipelineType {
@@ -41,7 +42,9 @@ impl<'a> PipelineBuilder<'a> {
       module: &vertex_module,
       compilation_options: Default::default(),
       entry_point: Some("vs_main"),
-      buffers: &[],
+      buffers: &[
+        mesh::Vertex::desc()
+      ],
     };
 
     let fragment = match self.fragment_module.as_ref() {

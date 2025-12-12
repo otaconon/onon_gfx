@@ -7,6 +7,7 @@ edition = "2024"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+bytemuck = "1.24.0"
 glam = "0.30.9"
 wgpu = "27.0.1"
 winit = "0.30.12"

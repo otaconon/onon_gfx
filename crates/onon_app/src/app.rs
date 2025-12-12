@@ -5,24 +5,47 @@ use winit::window::Window;
 pub struct WgpuApp {
   pub window: Arc<Window>,
   renderer: Renderer<'static>,
-  objects: Vec<RenderObject>
+  objects: Vec<RenderObject>,
 }
+
+const VERTICES: &[onon_render::mesh::Vertex] = &[
+  onon_render::mesh::Vertex {
+    position: [0.0, 0.5],
+    color: [1.0, 0.0, 0.0],
+  },
+  onon_render::mesh::Vertex {
+    position: [-0.5, -0.5],
+    color: [0.0, 1.0, 0.0],
+  },
+  onon_render::mesh::Vertex {
+    position: [0.5, -0.5],
+    color: [0.0, 0.0, 1.0],
+  },
+];
+
+const INDICES: &[u16] = &[0, 1, 2, 0];
 
 impl WgpuApp {
   pub async fn new(window: Arc<Window>) -> Self {
     #[cfg(target_arch = "wasm32")]
     {
       use crate::canvas::create_canvas;
-      create_canvas(window.clone()); 
+      create_canvas(window.clone());
     }
 
     let renderer = Renderer::new(window.clone()).await;
-    let render_objects = Vec::new();
+
+    let mesh = onon_render::mesh::Mesh2D::new(
+      VERTICES.to_vec(),
+      INDICES.to_vec(),
+      &renderer.render_state.device
+    );
+    let render_objects = vec![RenderObject::new(mesh, 0)];
 
     Self {
       window: window.clone(),
       renderer: renderer,
-      objects: render_objects
+      objects: render_objects,
     }
   }
 
@@ -31,15 +54,16 @@ impl WgpuApp {
 
     match self.renderer.begin_rendering() {
       Ok(Some(mut frame_ctx)) => {
-        let view = frame_ctx.output
+        let view = frame_ctx
+          .output
           .texture
           .create_view(&wgpu::TextureViewDescriptor::default());
         {
           let mut render_pass = frame_ctx.create_render_pass(&view);
-          let res = self.renderer.render_solids(&mut render_pass, &self.objects); 
+          let res = self.renderer.render_solids(&mut render_pass, &self.objects);
           match res {
-            Ok(()) => {},
-            Err(e) => log::error!("{}", e)
+            Ok(()) => {}
+            Err(e) => log::error!("{}", e),
           }
         }
         self.renderer.finish_rendering(frame_ctx);
