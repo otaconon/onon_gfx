@@ -11,7 +11,7 @@ onon_render = {path = "../onon_render"}
 cfg-if = "1.0.4"
 log = "0.4.29"
 parking_lot = "0.12.5"
-wgpu = "27.0.1"
+wgpu = "28.0.0"
 winit = "0.30.12"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]

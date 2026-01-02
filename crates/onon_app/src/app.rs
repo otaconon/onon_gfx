@@ -69,8 +69,8 @@ impl WgpuApp {
         self.renderer.finish_rendering(frame_ctx);
       }
       Ok(None) => {}
-      Err(wgpu::SurfaceError::Lost) => eprintln!("Surface is lost"),
-      Err(e) => eprintln!("{e:?}"),
+      Err(wgpu::SurfaceError::Lost) => log::error!("Surface is lost"),
+      Err(e) => log::error!("{e:?}"),
     }
     self.window.request_redraw();
   }

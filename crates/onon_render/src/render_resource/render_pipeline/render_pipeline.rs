@@ -77,7 +77,7 @@ impl<'a> PipelineBuilder<'a> {
         mask: !0,
         alpha_to_coverage_enabled: false,
       },
-      multiview: None,
+      multiview_mask: None,
       cache: None,
     }))
   }
