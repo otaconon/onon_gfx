@@ -6,7 +6,7 @@ use crate::queries;
 
 pub struct RenderState<'a> {
   pub surface: wgpu::Surface<'a>,
-  pub device: wgpu::Device,
+  device: wgpu::Device,
   pub queue: wgpu::Queue,
   pub config: wgpu::SurfaceConfiguration,
   pub new_size: Option<PhysicalSize<u32>>
@@ -46,6 +46,10 @@ impl<'a> RenderState<'a> {
 
   pub fn get_size(&self) -> PhysicalSize<u32> {
     PhysicalSize{width: self.config.width, height: self.config.height}
+  }
+
+  pub fn device(&self) -> &wgpu::Device {
+    &self.device
   }
 }
 

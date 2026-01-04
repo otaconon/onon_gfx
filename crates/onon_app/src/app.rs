@@ -1,4 +1,4 @@
-use onon_render::{RenderObject, Renderer};
+use onon_render::{RenderObject, Renderer, TextureArrayManager, render_resource::TextureArray};
 use std::sync::Arc;
 use winit::window::Window;
 
@@ -35,10 +35,31 @@ impl WgpuApp {
 
     let renderer = Renderer::new(window.clone()).await;
 
+    let diffuse_sampler = Arc::new(renderer.render_state.device().create_sampler(&wgpu::SamplerDescriptor {
+      address_mode_u: wgpu::AddressMode::ClampToEdge,
+      address_mode_v: wgpu::AddressMode::ClampToEdge,
+      address_mode_w: wgpu::AddressMode::ClampToEdge,
+      mag_filter: wgpu::FilterMode::Linear,
+      min_filter: wgpu::FilterMode::Nearest,
+      mipmap_filter: wgpu::MipmapFilterMode::Nearest,
+      ..Default::default()
+    }));
+
+    let mut texture_array_manager = TextureArrayManager::deafult();
+    texture_array_manager.add(TextureArray::srgba8_texture(
+      renderer.render_state.device(),
+      wgpu::Extent3d {
+        width: 256,
+        height: 256,
+        depth_or_array_layers: 5,
+      },
+      diffuse_sampler,
+    ));
+
     let mesh = onon_render::mesh::Mesh2D::new(
       VERTICES.to_vec(),
       INDICES.to_vec(),
-      &renderer.render_state.device
+      &renderer.render_state.device(),
     );
     let render_objects = vec![RenderObject::new(mesh, 0)];
 
