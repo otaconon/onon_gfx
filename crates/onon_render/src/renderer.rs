@@ -1,5 +1,5 @@
 use crate::{
-  TextureArrayManager, render_object::RenderObject, render_resource::{FrameContext, RenderState, render_pipeline}
+  TextureArrayManager, render_object::RenderObject, render_resource::{FrameContext, RenderState, render_pipeline}, texture_array_manager
 };
 use std::sync::Arc;
 use winit::{dpi::PhysicalSize, window::Window};
@@ -7,6 +7,7 @@ use winit::{dpi::PhysicalSize, window::Window};
 pub struct Renderer<'a> {
   pub render_state: RenderState<'a>,
   pipeline_manager: render_pipeline::PipelineManager,
+  pub texture_array_bind_group_layout: wgpu::BindGroupLayout // TODO: Remove from here
 }
 
 impl<'a> Renderer<'a> {
@@ -15,11 +16,13 @@ impl<'a> Renderer<'a> {
     let mut pipeline_manager = render_pipeline::PipelineManager::new();
 
     let solid_pipeline = render_pipeline::helpers::create_solid_pipeline(&render_state);
+    let texture_array_bind_group_layout = solid_pipeline.get_bind_group_layout(0);
     pipeline_manager.add_pipeline(render_pipeline::PipelineType::Solid, solid_pipeline);
 
     Self {
       render_state,
       pipeline_manager,
+      texture_array_bind_group_layout
     }
   }
 
@@ -46,6 +49,7 @@ impl<'a> Renderer<'a> {
     &self,
     render_pass: &mut wgpu::RenderPass,
     objects: &Vec<RenderObject>,
+    texture_array_manager: &TextureArrayManager
   ) -> Result<(), &'static str> {
     let pipeline = self
       .pipeline_manager
@@ -55,6 +59,8 @@ impl<'a> Renderer<'a> {
     render_pass.set_pipeline(pipeline);
 
     for object in objects {
+      let texture_array = texture_array_manager.get_texture_array(object.texture_array_id).unwrap();
+      render_pass.set_bind_group(0, &texture_array.bind_group, &[]);
       render_pass.set_vertex_buffer(0, object.mesh.vertex_buffer.slice(..));
       render_pass.set_index_buffer(
         object.mesh.index_buffer.slice(..),
