@@ -35,7 +35,7 @@ impl Texture {
     device: &wgpu::Device,
     queue: wgpu::Queue,
     img: image::DynamicImage,
-    sampler: std::sync::Arc<wgpu::Sampler>
+    sampler: std::sync::Arc<wgpu::Sampler>,
   ) -> Self {
     let diffuse_rgba = img.to_rgba8();
 
@@ -79,7 +79,7 @@ impl Texture {
     Self {
       texture,
       view,
-      sampler
+      sampler,
     }
   }
 

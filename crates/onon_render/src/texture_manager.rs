@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use anyhow::{Result, Context};
 
-use crate::render_resource::{Texture, TextureArray, texture_array::TextureArrayInfo};
+use crate::render_resource::{TextureArray, texture_array::TextureArrayInfo};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct TextureId(pub u32);

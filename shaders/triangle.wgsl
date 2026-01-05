@@ -1,11 +1,13 @@
 struct VertexInput {
   @location(0) position: vec2f,
   @location(1) tex_coords: vec2f,
+  @builtin(instance_index) texture_slot: u32
 }
 
 struct VertexOutput {
   @builtin(position) clip_position: vec4f,
   @location(0) tex_coords: vec2f,
+  @location(1) @interpolate(flat) texture_index: u32
 }
 
 @vertex
@@ -25,7 +27,5 @@ var s_diffuse: sampler;
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4f {
-  let layer_index = 0;
-  //return vec4f(1.0, 0.0, 0.0, 1.0);
-  return textureSample(t_diffuse, s_diffuse, in.tex_coords, layer_index);
+  return textureSample(t_diffuse, s_diffuse, in.tex_coords, in.texture_index);
 }
