@@ -1,12 +1,11 @@
-use onon_render::{RenderObject, Renderer, TextureArrayManager, mesh::Vertex, render_resource::TextureArray};
+use onon_render::{RenderObject, Renderer, mesh::Vertex};
 use std::sync::Arc;
 use winit::window::Window;
 
 pub struct WgpuApp {
   pub window: Arc<Window>,
   renderer: Renderer<'static>,
-  objects: Vec<RenderObject>,
-  texture_array_manager: TextureArrayManager
+  objects: Vec<RenderObject>
 }
 
 const VERTICES: &[onon_render::mesh::Vertex] = &[
@@ -33,58 +32,18 @@ impl WgpuApp {
 
     let renderer = Renderer::new(window.clone()).await;
 
-    let diffuse_sampler = Arc::new(renderer.render_state.device().create_sampler(&wgpu::SamplerDescriptor {
-      address_mode_u: wgpu::AddressMode::ClampToEdge,
-      address_mode_v: wgpu::AddressMode::ClampToEdge,
-      address_mode_w: wgpu::AddressMode::ClampToEdge,
-      mag_filter: wgpu::FilterMode::Linear,
-      min_filter: wgpu::FilterMode::Nearest,
-      mipmap_filter: wgpu::MipmapFilterMode::Nearest,
-      ..Default::default()
-    }));
-
-    let mut texture_array_manager = TextureArrayManager::deafult();
-    texture_array_manager.add(TextureArray::srgba8_texture(
-      renderer.render_state.device(),
-      wgpu::Extent3d {
-        width: 256,
-        height: 256,
-        depth_or_array_layers: 5,
-      },
-      diffuse_sampler,
-      &renderer.texture_array_bind_group_layout
-    ));
-
     let mesh = onon_render::mesh::Mesh2D::new(
       VERTICES.to_vec(),
       INDICES.to_vec(),
       &renderer.render_state.device(),
     );
     
-    let diffuse_bytes = include_bytes!("../../../resources/happy-tree-cartoon.png");
-    let diffuse_image = image::load_from_memory(diffuse_bytes).unwrap();
-    let diffuse_rgba = diffuse_image.to_rgba8();
-
-    use image::GenericImageView;
-    let dimensions = diffuse_image.dimensions();
-    let slot: u32;
-    match texture_array_manager.get_texture_array_mut(0) {
-      Some(texture_array) => {
-        slot = texture_array.upload_texture(&renderer.render_state.queue, &diffuse_rgba, dimensions.0, dimensions.1);
-      }
-      None => {
-        slot = 0;
-        log::error!("Failed to get texture");
-      }
-    }
-
     let render_objects = vec![RenderObject::new(mesh, 0, 0, slot)];
 
     Self {
       window: window.clone(),
       renderer: renderer,
-      objects: render_objects,
-      texture_array_manager
+      objects: render_objects
     }
   }
 
@@ -99,7 +58,7 @@ impl WgpuApp {
           .create_view(&wgpu::TextureViewDescriptor::default());
         {
           let mut render_pass = frame_ctx.create_render_pass(&view);
-          let res = self.renderer.render_solids(&mut render_pass, &self.objects, &self.texture_array_manager);
+          let res = self.renderer.render_solids(&mut render_pass, &self.objects);
           match res {
             Ok(()) => {}
             Err(e) => log::error!("{}", e),

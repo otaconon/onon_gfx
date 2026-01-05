@@ -1,24 +1,31 @@
 use crate::render_resource::Texture;
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
+use anyhow::Result;
+
+#[derive(Clone, Hash, PartialEq, Eq)]
+pub struct TextureArrayInfo {
+  pub dims: wgpu::Extent3d,
+  pub sampler: std::sync::Arc<wgpu::Sampler>,
+  pub bind_group_layout: wgpu::BindGroupLayout
+}
 
 pub struct TextureArray {
   pub texture: Texture,
   pub bind_group: wgpu::BindGroup,
+  info: TextureArrayInfo,
 
-  layer_capacity: u32,
   free_slots: VecDeque<u32>,
+  cache: HashMap<std::path::PathBuf, u32>
 }
 
 impl TextureArray {
-  pub fn srgba8_texture(
+  pub fn new(
     device: &wgpu::Device,
-    size: wgpu::Extent3d,
-    sampler: std::sync::Arc<wgpu::Sampler>,
-    bind_group_layout: &wgpu::BindGroupLayout
+    info: &TextureArrayInfo,
   ) -> Self {
-    let texture = Texture::create_array(&device, sampler, size, wgpu::TextureFormat::Rgba8UnormSrgb);
+    let texture = Texture::create_array(&device, info.sampler.clone(), info.dims, wgpu::TextureFormat::Rgba8UnormSrgb);
     let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-      layout: &bind_group_layout,
+      layout: &info.bind_group_layout,
       entries: &[
         wgpu::BindGroupEntry {
           binding: 0,
@@ -35,11 +42,37 @@ impl TextureArray {
     Self {
       texture,
       bind_group,
-      layer_capacity: size.depth_or_array_layers,
-      free_slots: (0..size.depth_or_array_layers).collect(),
+      free_slots: (0..info.dims.depth_or_array_layers).collect(),
+      info: info.clone(),
+      cache: HashMap::new()
     }
   }
 
+  pub fn by_path(&self, path: &std::path::Path) -> Option<&u32> {
+    self.cache.get(path)
+  }
+
+  pub fn load_from_file<P: AsRef<std::path::Path>>(&mut self, queue: &wgpu::Queue, path: P) -> Result<u32> {
+    let path_ref = path.as_ref();
+
+    if let Some(slot) = self.by_path(path_ref) {
+      return Ok(*slot)
+    }
+
+    let bytes = std::fs::read(path_ref)?;
+    let image = image::load_from_memory(&bytes)?;
+    let rgba = image.to_rgba8();
+
+    use image::GenericImageView;
+    let dimensions = image.dimensions();
+
+    let slot = self.upload_texture(queue, &rgba, dimensions.0, dimensions.1);
+    self.cache.insert(path_ref.to_path_buf(), slot);
+
+    Ok(slot)
+  }
+
+  /// This function is not recommended to use as it does not cache texture
   pub fn upload_texture(
     &mut self,
     queue: &wgpu::Queue,
