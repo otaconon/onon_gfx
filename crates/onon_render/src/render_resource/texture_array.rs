@@ -1,12 +1,14 @@
 use crate::render_resource::Texture;
-use std::collections::{HashMap, VecDeque};
 use anyhow::Result;
+use std::collections::{HashMap, VecDeque};
 
+/// Struct used to store the important elements, that differ with
+/// each texture array.
 #[derive(Clone, Hash, PartialEq, Eq)]
 pub struct TextureArrayInfo {
   pub dims: wgpu::Extent3d,
   pub sampler: std::sync::Arc<wgpu::Sampler>,
-  pub bind_group_layout: wgpu::BindGroupLayout
+  pub bind_group_layout: wgpu::BindGroupLayout,
 }
 
 pub struct TextureArray {
@@ -15,15 +17,17 @@ pub struct TextureArray {
   info: TextureArrayInfo,
 
   free_slots: VecDeque<u32>,
-  cache: HashMap<std::path::PathBuf, u32>
+  cache: HashMap<std::path::PathBuf, u32>,
 }
 
 impl TextureArray {
-  pub fn new(
-    device: &wgpu::Device,
-    info: &TextureArrayInfo,
-  ) -> Self {
-    let texture = Texture::create_array(&device, info.sampler.clone(), info.dims, wgpu::TextureFormat::Rgba8UnormSrgb);
+  pub fn new(device: &wgpu::Device, info: &TextureArrayInfo) -> Self {
+    let texture = Texture::create_array(
+      &device,
+      info.sampler.clone(),
+      info.dims,
+      wgpu::TextureFormat::Rgba8UnormSrgb,
+    );
     let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
       layout: &info.bind_group_layout,
       entries: &[
@@ -44,7 +48,7 @@ impl TextureArray {
       bind_group,
       free_slots: (0..info.dims.depth_or_array_layers).collect(),
       info: info.clone(),
-      cache: HashMap::new()
+      cache: HashMap::new(),
     }
   }
 
@@ -52,11 +56,15 @@ impl TextureArray {
     self.cache.get(path)
   }
 
-  pub fn load_from_file<P: AsRef<std::path::Path>>(&mut self, queue: &wgpu::Queue, path: P) -> Result<u32> {
+  pub fn load_from_file<P: AsRef<std::path::Path>>(
+    &mut self,
+    queue: &wgpu::Queue,
+    path: P,
+  ) -> Result<u32> {
     let path_ref = path.as_ref();
 
     if let Some(slot) = self.by_path(path_ref) {
-      return Ok(*slot)
+      return Ok(*slot);
     }
 
     let bytes = std::fs::read(path_ref)?;
