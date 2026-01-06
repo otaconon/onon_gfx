@@ -11,11 +11,11 @@ impl PipelineManager {
     Self {pipelines: HashMap::new()}
   }
 
-  pub fn add_pipeline(&mut self, pipeline_type: PipelineType, pipeline: wgpu::RenderPipeline) {
+  pub fn add(&mut self, pipeline_type: PipelineType, pipeline: wgpu::RenderPipeline) {
     self.pipelines.insert(pipeline_type, pipeline);
   }
 
-  pub fn get_pipeline(&self, pipeline_type: PipelineType) -> Option<&wgpu::RenderPipeline> {
+  pub fn get(&self, pipeline_type: PipelineType) -> Option<&wgpu::RenderPipeline> {
     self.pipelines.get(&pipeline_type)
   }
 }

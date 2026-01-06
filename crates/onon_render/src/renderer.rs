@@ -47,7 +47,7 @@ impl<'a> Renderer<'a> {
     };
     texture_manager.add_texture_array(render_state.device(), texture_array_info.clone());
 
-    pipeline_manager.add_pipeline(render_pipeline::PipelineType::Solid, solid_pipeline);
+    pipeline_manager.add(render_pipeline::PipelineType::Solid, solid_pipeline);
 
     Self {
       render_state,
@@ -83,7 +83,7 @@ impl<'a> Renderer<'a> {
   ) -> Result<()> {
     let pipeline = self
       .pipeline_manager
-      .get_pipeline(render_pipeline::PipelineType::Solid)
+      .get(render_pipeline::PipelineType::Solid)
       .context("No solid pipeline is setup")?;
 
     render_pass.set_pipeline(pipeline);
@@ -127,7 +127,7 @@ impl<'a> Renderer<'a> {
   pub fn render_wireframes(&self, render_pass: &mut wgpu::RenderPass) -> Result<(), &'static str> {
     let pipeline = self
       .pipeline_manager
-      .get_pipeline(render_pipeline::PipelineType::Wireframe)
+      .get(render_pipeline::PipelineType::Wireframe)
       .ok_or("No wireframe pipeline is setup")?;
     render_pass.set_pipeline(pipeline);
 

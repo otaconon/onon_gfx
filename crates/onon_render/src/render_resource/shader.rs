@@ -11,17 +11,17 @@ use wgpu::{
 };
 
 #[derive(Debug, Eq, PartialEq)]
-struct ShaderBindingInfo {
-  set: u32,
-  binding: u32,
-  binding_type: BindingType,
+pub struct ShaderBindingInfo {
+  pub group: u32,
+  pub binding: u32,
+  pub ty: BindingType,
 }
 
 impl Ord for ShaderBindingInfo {
   fn cmp(&self, other: &Self) -> Ordering {
     self
-      .set
-      .cmp(&other.set)
+      .group
+      .cmp(&other.group)
       .then(self.binding.cmp(&other.binding))
   }
 }
@@ -32,10 +32,10 @@ impl PartialOrd for ShaderBindingInfo {
   }
 }
 
-/// Holds bindings in an organized way
+/// Holds bindings sorted by group first, binding second
 pub struct Shader {
   module: Module,
-  bindings: Vec<ShaderBindingInfo>,
+  pub bindings: Vec<ShaderBindingInfo>,
 }
 
 impl Shader {
@@ -48,15 +48,16 @@ impl Shader {
       if let Some(ref binding) = global.binding {
         match get_binding_type(ty, global) {
           Ok(binding_type) => bindings.push(ShaderBindingInfo {
-            set: binding.group,
+            group: binding.group,
             binding: binding.binding,
-            binding_type,
+            ty: binding_type,
           }),
           Err(e) => log::error!("{}", e),
         }
       }
     }
 
+    bindings.sort();
     Shader { module, bindings }
   }
 }
